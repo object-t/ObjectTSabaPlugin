@@ -1,0 +1,4 @@
+name: ObjectTSaba
+version: '1.0'
+main: com.objectt.ObjectTSaba
+api-version: '1.21'

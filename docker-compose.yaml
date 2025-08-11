@@ -1,0 +1,90 @@
+services:
+  lobby:
+    image: itzg/minecraft-server
+    environment:
+      - EULA=TRUE
+      - ONLINE_MODE=FALSE
+      - TYPE=PAPER
+      - VERSION=1.21.8
+      - SERVER_NAME=lobby
+      - REPLACE_ENV_VARIABLES=TRUE
+      - ENV_VARIABLE_PREFIX=CFG_
+      - CFG_VELOCITY_ENABLED=true
+      - CFG_VELOCITY_SECRET=${VELOCITY_SECRET}
+      - CFG_VELOCITY_ONLINE_MODE=true
+      - ENFORCE_SECURE_PROFILE=false
+      - PATCH_DEFINITIONS=/patches
+    volumes:
+      - ./docker/plugins:/plugins  
+      - ./docker/lobby:/data
+      - ./docker/patches:/patches
+    depends_on:
+      - db
+      - velocity
+    networks:
+      - minecraft-network
+
+  survival:
+    image: itzg/minecraft-server
+    environment:
+      - EULA=TRUE
+      - ONLINE_MODE=FALSE
+      - TYPE=PAPER
+      - VERSION=1.21.8
+      - SERVER_NAME=survival
+      - REPLACE_ENV_VARIABLES=TRUE
+      - ENV_VARIABLE_PREFIX=CFG_
+      - CFG_VELOCITY_ENABLED=true
+      - CFG_VELOCITY_SECRET=${VELOCITY_SECRET}
+      - CFG_VELOCITY_ONLINE_MODE=true
+      - ENFORCE_SECURE_PROFILE=false
+      - PATCH_DEFINITIONS=/patches
+    volumes:
+      - ./docker/plugins:/data/plugins
+      - ./docker/survival:/data
+      - ./docker/patches:/patches
+    depends_on:
+      - db
+      - velocity
+    networks:
+      - minecraft-network
+
+  velocity:
+    image: itzg/bungeecord
+    ports:
+      - "25577:25577"
+    environment:
+      - TYPE=VELOCITY
+      - VELOCITY_VERSION=3.4.0-SNAPSHOT
+    volumes:
+      - ./docker/velocity:/server
+    networks:
+      - minecraft-network
+
+  db:
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=minecraft_root_pass
+      - MYSQL_DATABASE=minecraft
+      - MYSQL_USER=minecraft_user
+      - MYSQL_PASSWORD=minecraft_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/db/data:/var/lib/mysql
+      - ./docker/db/init:/docker-entrypoint-initdb.d
+    networks:
+      - minecraft-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+networks:
+  minecraft-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  lobby_data:
+  survival_data:

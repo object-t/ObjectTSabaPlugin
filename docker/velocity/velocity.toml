@@ -1,0 +1,43 @@
+bind = "0.0.0.0:25577"
+# What should be the MOTD? This gets displayed when the player adds your server to
+# their server list. Only MiniMessage format is accepted.
+motd = "<aqua>                 ・おぶじぇってぃ生活鯖・</aqua>\n     　                <obfuscated>a</obfuscated> <yellow>開発環境</yellow> <obfuscated>a</obfuscated>"
+show-max-players = 3
+online-mode = true
+prevent-client-proxy-connections = false
+forced-hosts = {}
+#If you are using modern or BungeeGuard IP forwarding, configure a file that contains a unique secret here.
+#The file is expected to be UTF-8 encoded and not empty.
+# Legacy forwarding configuration (commented out)
+config-version = "2.7"
+#Should the proxy enforce the new public key security standard? By default, this is on.
+force-key-authentication = true
+player-info-forwarding-mode = "modern"
+forwarding-secret-file = "forwarding.secret"
+
+[servers]
+	lobby = "lobby:25565"
+	survival = "survival:25565"
+	try = ["lobby"]
+[advanced]
+	read-timeout = 30000
+	tcp-fast-open = false
+	compression-level = -1
+	compression-threshold = 256
+	connection-throttle-limit = 3
+	login-ratelimit = 3000
+	log-player-connections = true
+	bungee-plugin-message-channel = true
+	show-ping-requests = true
+	#Allows players transferred from other hosts via the
+	#Transfer packet (Minecraft 1.20.5) to be received.
+	accepts-transfers = false
+	connection-throttle = 4000
+	announce-proxy-commands = true
+	haproxy-protocol = false
+	log-command-executions = false
+[query]
+	port = 25577
+	show-plugins = false
+	map = "Velocity"
+	enabled = false

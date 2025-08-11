@@ -1,0 +1,12 @@
+.idea
+.gradle
+.env
+
+build
+
+docker/db/data
+docker/lobby
+docker/survival
+docker/plugins
+docker/velocity/*
+!docker/velocity/velocity.toml
