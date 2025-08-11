@@ -1,4 +1,13 @@
 name: ObjectTSaba
-version: '1.0'
+version: '1.0.0'
 main: com.objectt.ObjectTSaba
 api-version: '1.21'
+
+permissions:
+  objectt.home.default:
+    default: true
+    children:
+      objectt.home.add: true
+      objectt.home.remove: true
+      objectt.home.list: true
+      objectt.home.use: true

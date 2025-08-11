@@ -14,8 +14,9 @@ services:
       - CFG_VELOCITY_ONLINE_MODE=true
       - ENFORCE_SECURE_PROFILE=false
       - PATCH_DEFINITIONS=/patches
+      - CREATE_CONSOLE_IN_PIPE=true
     volumes:
-      - ./docker/plugins:/plugins  
+      - ./docker/plugins:/plugins
       - ./docker/lobby:/data
       - ./docker/patches:/patches
     depends_on:
@@ -39,8 +40,9 @@ services:
       - CFG_VELOCITY_ONLINE_MODE=true
       - ENFORCE_SECURE_PROFILE=false
       - PATCH_DEFINITIONS=/patches
+      - CREATE_CONSOLE_IN_PIPE=true
     volumes:
-      - ./docker/plugins:/data/plugins
+      - ./docker/plugins:/plugins
       - ./docker/survival:/data
       - ./docker/patches:/patches
     depends_on:
