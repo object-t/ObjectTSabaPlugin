@@ -8,7 +8,9 @@ public enum Permissions {
     HOME_ADD_COMMAND("objectt.home.add", true),
     HOME_REMOVE_COMMAND("objectt.home.remove", true),
     HOME_LIST_COMMAND("objectt.home.list", true),
-    HOME_USE_COMMAND("objectt.home.use", true);
+    HOME_USE_COMMAND("objectt.home.use", true),
+
+    SKULL("objectt.skull", true);
 
     private final String permission;
     private final boolean canUseDefault;

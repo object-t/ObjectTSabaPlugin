@@ -1,6 +1,7 @@
 package com.objectt;
 
 import com.objectt.commands.HomeCommand;
+import com.objectt.commands.SkullCommand;
 import com.objectt.enums.Permissions;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
@@ -65,6 +66,7 @@ public final class ObjectTSaba extends JavaPlugin {
             final Commands commands = event.registrar();
             
             commands.register(new HomeCommand().getCommandNode());
+            commands.register(new SkullCommand().getCommandNode());
             
             getLogger().info("コマンド登録完了");
         });

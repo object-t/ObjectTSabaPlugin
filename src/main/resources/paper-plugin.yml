@@ -4,10 +4,12 @@ main: com.objectt.ObjectTSaba
 api-version: '1.21'
 
 permissions:
-  objectt.home.default:
+  objectt.default:
     default: true
     children:
+      objectt.player: true
       objectt.home.add: true
       objectt.home.remove: true
       objectt.home.list: true
       objectt.home.use: true
+      objectt.skull: true

@@ -17,9 +17,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class HomeCommand {
+public class HomeCommand implements com.objectt.commands.Command {
     private static final Map<UUID, Map<String, Location>> playerHomes = new HashMap<>();
 
+    @Override
     public LiteralCommandNode<CommandSourceStack> getCommandNode() {
         return Commands.literal("home")
                 .executes(this::teleportHome)
