@@ -10,9 +10,12 @@ import com.objectt.data.dao.UserHome;
 import com.objectt.enums.Permissions;
 import com.objectt.gui.inventory.HomeCustomInventory;
 import com.objectt.repository.HomeRepository;
+import com.objectt.repository.IgnoreWorldRepository;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
@@ -20,9 +23,11 @@ import java.util.concurrent.CompletableFuture;
 
 public class HomeCommand implements com.objectt.commands.Command {
     private final HomeRepository homeRepository;
+    private final IgnoreWorldRepository ignoreWorldRepository;
 
-    public HomeCommand(HomeRepository homeRepository) {
+    public HomeCommand(HomeRepository homeRepository, IgnoreWorldRepository ignoreWorldRepository) {
         this.homeRepository = homeRepository;
+        this.ignoreWorldRepository = ignoreWorldRepository;
     }
 
     @Override
@@ -61,6 +66,15 @@ public class HomeCommand implements com.objectt.commands.Command {
                                 .requires(Permissions.HOME_INFO_COMMAND::hasPermission)
                         )
                 )
+
+                // 特定のワールドでhomeを使用できなくする
+                .then(Commands.literal("disable_world")
+                        .requires(Permissions::isPlayerOp)
+                        .then(Commands.argument("name", StringArgumentType.word())
+                                .suggests(this::suggestWorldNames)
+                                .executes(this::disableWorld)
+                        )
+                )
                 .build();
     }
 
@@ -80,6 +94,12 @@ public class HomeCommand implements com.objectt.commands.Command {
         Player player = (Player) ctx.getSource().getSender();
         UUID playerId = player.getUniqueId();
 
+        String currentWorldName = player.getWorld().getName();
+        if (ignoreWorldRepository.isIgnoreWorld(currentWorldName)) {
+            player.sendPlainMessage("§cこのワールドではホームを設定できません。");
+            return 0;
+        }
+
         UserHome userHome = this.homeRepository.findById(playerId);
         player.openInventory(new HomeCustomInventory(userHome).getInventory());
 
@@ -97,6 +117,13 @@ public class HomeCommand implements com.objectt.commands.Command {
 
         if (homeName.length() > 16) {
             player.sendPlainMessage("§cホーム名は16文字以内にしてください。");
+            return 0;
+        }
+
+        // 現在のワールドが無視リストに含まれているかチェック
+        String currentWorldName = player.getWorld().getName();
+        if (ignoreWorldRepository.isIgnoreWorld(currentWorldName)) {
+            player.sendPlainMessage("§cこのワールドではホームを設定できません。");
             return 0;
         }
 
@@ -210,6 +237,31 @@ public class HomeCommand implements com.objectt.commands.Command {
                 .filter(homeName -> homeName.toLowerCase().startsWith(input))
                 .forEach(builder::suggest);
         
+        return builder.buildFuture();
+    }
+
+    private int disableWorld(CommandContext<CommandSourceStack> ctx) {
+        Player player = (Player) ctx.getSource().getSender();
+        String worldName = StringArgumentType.getString(ctx, "name");
+        
+        if (ignoreWorldRepository.isIgnoreWorld(worldName)) {
+            ignoreWorldRepository.removeIgnoreWorld(worldName);
+            player.sendPlainMessage("§a'" + worldName + "'をホーム無視リストから除外しました。");
+            return 0;
+        }
+        
+        ignoreWorldRepository.addIgnoreWorld(worldName);
+        player.sendPlainMessage("§a'" + worldName + "'をホーム無視リストに追加しました。");
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private CompletableFuture<Suggestions> suggestWorldNames(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        if (!(ctx.getSource().getSender() instanceof Player)) {
+            return builder.buildFuture();
+        }
+
+        String input = builder.getRemaining().toLowerCase();
+        Bukkit.getWorlds().stream().filter(world -> world.getName().toLowerCase().startsWith(input)).forEach(n -> builder.suggest(n.getName()));
         return builder.buildFuture();
     }
 }

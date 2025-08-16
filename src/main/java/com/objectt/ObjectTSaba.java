@@ -11,6 +11,8 @@ import com.objectt.listener.InventoryClickListener;
 import com.objectt.listener.PlayerJoinListener;
 import com.objectt.repository.HomeRepository;
 import com.objectt.repository.HomeRepositoryImpl;
+import com.objectt.repository.IgnoreWorldRepository;
+import com.objectt.repository.IgnoreWorldRepositoryImpl;
 import com.objectt.repository.TipRepository;
 import com.objectt.repository.TipRepositoryImpl;
 import com.objectt.gui.scoreboard.ScoreBoardManager;
@@ -27,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 
 public final class ObjectTSaba extends JavaPlugin {
     private final HomeRepository homeRepository = new HomeRepositoryImpl(this);
+    private final IgnoreWorldRepository ignoreWorldRepository = new IgnoreWorldRepositoryImpl(this);
     private final TipRepository tipRepository = new TipRepositoryImpl(this);
     private final ScoreBoardManager scoreBoardManager = new ScoreBoardManager();
     private ScoreBoardUpdateTask scoreBoardUpdateTask;
@@ -109,7 +112,7 @@ public final class ObjectTSaba extends JavaPlugin {
         manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             final Commands commands = event.registrar();
             
-            commands.register(new HomeCommand(homeRepository).getCommandNode());
+            commands.register(new HomeCommand(homeRepository, ignoreWorldRepository).getCommandNode());
             commands.register(new SkullCommand().getCommandNode());
             commands.register(new MoneyCommand().getCommandNode());
             commands.register(new ScoreboardCommand(scoreBoardManager).getCommandNode());
