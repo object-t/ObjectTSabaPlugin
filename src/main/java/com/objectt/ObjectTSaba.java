@@ -15,6 +15,7 @@ import com.objectt.repository.TipRepository;
 import com.objectt.repository.TipRepositoryImpl;
 import com.objectt.gui.scoreboard.ScoreBoardManager;
 import com.objectt.gui.scoreboard.ScoreBoardUpdateTask;
+import com.objectt.gui.hologram.EconomyRankHologram;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -29,6 +30,7 @@ public final class ObjectTSaba extends JavaPlugin {
     private final TipRepository tipRepository = new TipRepositoryImpl(this);
     private final ScoreBoardManager scoreBoardManager = new ScoreBoardManager();
     private ScoreBoardUpdateTask scoreBoardUpdateTask;
+    private EconomyRankHologram economyRankHologram;
 
     @Override
     public void onEnable() {
@@ -51,6 +53,7 @@ public final class ObjectTSaba extends JavaPlugin {
         registerCommands();
         registerListeners();
         setupScoreBoard();
+        setupHologram();
     }
 
     private void setupVault() {
@@ -114,6 +117,24 @@ public final class ObjectTSaba extends JavaPlugin {
             
             getLogger().info("コマンド登録完了");
         });
+    }
+
+    private void setupHologram() {
+        if (getServer().getPluginManager().getPlugin("DecentHolograms") != null) {
+            getLogger().info("DecentHologramsを検出しました。経済ランキングホログラムを初期化中...");
+            economyRankHologram = new EconomyRankHologram(this);
+            
+            // 5分ごとにランキングを更新
+            getServer().getScheduler().runTaskTimer(this, () -> {
+                if (economyRankHologram != null) {
+                    economyRankHologram.updateRanking();
+                }
+            }, 20L * 60L, 20L * 10L); // 1分後に開始、5分間隔
+            
+            getLogger().info("経済ランキングホログラムシステムの初期化が完了しました");
+        } else {
+            getLogger().info("DecentHologramsが見つかりません。ホログラム機能をスキップします。");
+        }
     }
 
     @Override

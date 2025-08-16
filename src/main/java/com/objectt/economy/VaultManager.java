@@ -1,6 +1,7 @@
 package com.objectt.economy;
 
 import net.milkbowl.vault.economy.Economy;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
@@ -42,6 +43,11 @@ public class VaultManager {
     }
 
     public static double getBalance(Player player) {
+        if (!isEnabled()) return -1;
+        return economy.getBalance(player);
+    }
+    
+    public static double getBalance(OfflinePlayer player) {
         if (!isEnabled()) return -1;
         return economy.getBalance(player);
     }
