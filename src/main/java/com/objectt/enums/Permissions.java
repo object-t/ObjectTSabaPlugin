@@ -1,6 +1,9 @@
 package com.objectt.enums;
 
+import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 
 public enum Permissions {
@@ -10,7 +13,11 @@ public enum Permissions {
     HOME_LIST_COMMAND("objectt.home.list", true),
     HOME_USE_COMMAND("objectt.home.use", true),
 
-    SKULL("objectt.skull", true);
+    SKULL("objectt.skull", true),
+
+    MONEY_ADMIN("objectt.money.admin", false),
+
+    SCOREBOARD("objectt.scoreboard", true);
 
     private final String permission;
     private final boolean canUseDefault;
@@ -67,5 +74,17 @@ public enum Permissions {
         }
         
         return true;
+    }
+
+    public static boolean isPlayerOnly(CommandContext<CommandSourceStack> context) {
+        if (!(context.getSource().getSender() instanceof Player)) {
+            context.getSource().getSender().sendMessage(Component.text("このコマンドはプレイヤーのみ実行できます", NamedTextColor.RED));
+            return false;
+        }
+        return true;
+    }
+    
+    public static boolean isPlayerOp(CommandSourceStack source) {
+        return source.getSender() instanceof Player && ((Player) source.getSender()).isOp();
     }
 }

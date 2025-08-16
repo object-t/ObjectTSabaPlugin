@@ -16,6 +16,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -58,7 +59,7 @@ public class SkullCommand implements Command {
                 return Bukkit.getOfflinePlayer(name).getPlayerProfile();
             }
         }).thenAccept(targetProfile -> {
-            Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("ObjectTSaba"), () -> {
+            Bukkit.getScheduler().runTask(JavaPlugin.getPlugin(JavaPlugin.class), () -> {
                 ItemStack item = new ItemStack(Material.PLAYER_HEAD);
                 item.setAmount(amount);
                 item.editMeta(meta -> ((SkullMeta) meta).setPlayerProfile(targetProfile));

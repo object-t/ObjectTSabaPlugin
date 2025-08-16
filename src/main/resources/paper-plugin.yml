@@ -3,6 +3,13 @@ version: '1.0.0'
 main: com.objectt.ObjectTSaba
 api-version: '1.21'
 
+dependencies:
+  server:
+    Vault:
+      load: BEFORE
+      required: false
+      join-classpath: true
+
 permissions:
   objectt.default:
     default: true
@@ -13,3 +20,7 @@ permissions:
       objectt.home.list: true
       objectt.home.use: true
       objectt.skull: true
+      objectt.scoreboard: true
+
+  objectt.admin.money:
+    default: op

@@ -8,10 +8,12 @@ init:
 
 build: init
 	rm -rf build/libs
-	./gradlew build
-	rm -rf docker/{survival,lobby,}/plugins/ObjectTSabaPlugin-*.jar || true
+	./gradlew clean build
+	rm -rf docker/plugins/ObjectTSabaPlugin-*.jar || true
+	rm -rf docker/{survival,lobby}/plugins/ObjectTSabaPlugin-*.jar || true
+	rm -rf docker/{survival,lobby}/plugins/build || true
 	mkdir -p docker/plugins
-	cp build/libs/*.jar docker/plugins/
+	cp build/libs/ObjectTSabaPlugin-*.jar docker/plugins/
 
 up: build
 	docker compose --env-file .env up -d

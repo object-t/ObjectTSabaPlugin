@@ -6,33 +6,30 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import com.objectt.data.dao.UserHome;
 import com.objectt.enums.Permissions;
+import com.objectt.gui.inventory.HomeCustomInventory;
+import com.objectt.repository.HomeRepository;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class HomeCommand implements com.objectt.commands.Command {
-    private static final Map<UUID, Map<String, Location>> playerHomes = new HashMap<>();
+    private final HomeRepository homeRepository;
+
+    public HomeCommand(HomeRepository homeRepository) {
+        this.homeRepository = homeRepository;
+    }
 
     @Override
     public LiteralCommandNode<CommandSourceStack> getCommandNode() {
         return Commands.literal("home")
-                .executes(this::teleportHome)
+                .executes(this::openHomeUI)
                 .requires(Permissions.HOME_USE_COMMAND::hasPermission)
-
-                // /home <名前> - 指定ホームにテレポート
-                .then(Commands.argument("name", StringArgumentType.word())
-                        .suggests(this::suggestHomeNames)
-                        .executes(this::teleportToNamedHome)
-                        .requires(Permissions.HOME_USE_COMMAND::hasPermission)
-                )
-
                 // /home add <名前> - ホーム追加
                 .then(Commands.literal("add")
                         .then(Commands.argument("name", StringArgumentType.word())
@@ -67,57 +64,24 @@ public class HomeCommand implements com.objectt.commands.Command {
                 .build();
     }
 
-    private record HomeResult(Player player, UUID playerId, Map<String, Location> homes, boolean exists) {}
-
-    private HomeResult getPlayerHome(CommandContext<CommandSourceStack> ctx, String homeName) {
-        Player player = (Player) ctx.getSource().getSender();
+    private UserHome getPlayerHome(Player player, String homeName) {
         UUID playerId = player.getUniqueId();
         
-        Map<String, Location> homes = playerHomes.get(playerId);
-        if (homes == null || !homes.containsKey(homeName)) {
+        UserHome homes = this.homeRepository.findById(playerId);
+        if (!homes.homes().containsKey(homeName)) {
             player.sendPlainMessage("§c'" + homeName + "'というホームは存在しません。");
-            return new HomeResult(null, null, null, false);
+            return homes;
         }
         
-        return new HomeResult(player, playerId, homes, true);
+        return homes;
     }
 
-    private int teleportHome(CommandContext<CommandSourceStack> ctx) {
+    private int openHomeUI(CommandContext<CommandSourceStack> ctx) {
         Player player = (Player) ctx.getSource().getSender();
         UUID playerId = player.getUniqueId();
 
-        Map<String, Location> homes = playerHomes.get(playerId);
-        if (homes == null || homes.isEmpty()) {
-            player.sendPlainMessage("§cホームが設定されていません。/home add <名前> でホームを追加してください。");
-            return 0;
-        }
-
-        Location homeLocation = homes.get("home");
-        if (homeLocation == null) {
-            homeLocation = homes.values().iterator().next();
-        }
-
-        player.teleport(homeLocation);
-        player.sendPlainMessage("§aホームにテレポートしました。");
-
-        return Command.SINGLE_SUCCESS;
-    }
-
-    private int teleportToNamedHome(CommandContext<CommandSourceStack> ctx) {
-        if (!Permissions.requiresPlayerWithLevel(ctx.getSource(), Permissions.HOME_USE_COMMAND)) {
-            return 0;
-        }
-
-        String homeName = StringArgumentType.getString(ctx, "name");
-        HomeResult result = getPlayerHome(ctx, homeName);
-        
-        if (!result.exists) {
-            return 0;
-        }
-
-        Location homeLocation = result.homes.get(homeName);
-        result.player.teleport(homeLocation);
-        result.player.sendPlainMessage("§a'" + homeName + "'ホームにテレポートしました。");
+        UserHome userHome = this.homeRepository.findById(playerId);
+        player.openInventory(new HomeCustomInventory(userHome).getInventory());
 
         return Command.SINGLE_SUCCESS;
     }
@@ -136,15 +100,15 @@ public class HomeCommand implements com.objectt.commands.Command {
             return 0;
         }
 
-        Map<String, Location> homes = playerHomes.computeIfAbsent(playerId, k -> new HashMap<>());
+        UserHome userHome = homeRepository.findById(playerId);
 
-        if (!player.isOp() && homes.size() >= 5) {
-            player.sendPlainMessage("§cホーム数の上限（5個）に達しています。");
+        if (userHome.homes().size() >= userHome.level()) {
+            player.sendPlainMessage("§cホーム数の上限（" + userHome.level() + "個）に達しています。");
             return 0;
         }
 
         Location currentLocation = player.getLocation();
-        homes.put(homeName, currentLocation);
+        userHome.homes().put(homeName, new UserHome.Home(currentLocation));
 
         player.sendPlainMessage("§a'" + homeName + "'ホームを追加しました。");
         player.sendPlainMessage("§7座標: " +
@@ -155,6 +119,8 @@ public class HomeCommand implements com.objectt.commands.Command {
                         currentLocation.getWorld().getName())
         );
 
+        this.homeRepository.save(userHome);
+
         return Command.SINGLE_SUCCESS;
     }
 
@@ -163,19 +129,13 @@ public class HomeCommand implements com.objectt.commands.Command {
             return 0;
         }
 
+        Player player = (Player) ctx.getSource().getSender();
         String homeName = StringArgumentType.getString(ctx, "name");
-        HomeResult result = getPlayerHome(ctx, homeName);
-        
-        if (!result.exists) {
-            return 0;
-        }
+        UserHome userHome = getPlayerHome(player, homeName);
 
-        result.homes.remove(homeName);
-        if (result.homes.isEmpty()) {
-            playerHomes.remove(result.playerId);
-        }
-
-        result.player.sendPlainMessage("§a'" + homeName + "'ホームを削除しました。");
+        userHome.homes().remove(homeName);
+        this.homeRepository.save(userHome);
+        player.sendPlainMessage("§a'" + homeName + "'ホームを削除しました。");
 
         return Command.SINGLE_SUCCESS;
     }
@@ -188,20 +148,23 @@ public class HomeCommand implements com.objectt.commands.Command {
         Player player = (Player) ctx.getSource().getSender();
         UUID playerId = player.getUniqueId();
 
-        Map<String, Location> homes = playerHomes.get(playerId);
-        if (homes == null || homes.isEmpty()) {
+        UserHome userHome = this.homeRepository.findById(playerId);
+        if (userHome.homes().isEmpty()) {
             player.sendPlainMessage("§cホームが設定されていません。");
             return 0;
         }
 
         player.sendPlainMessage("§e=== あなたのホーム一覧 ===");
-        homes.forEach((name, location) -> player.sendPlainMessage("§a" + name + " §7- " +
-                String.format("%.0f, %.0f, %.0f (%s)",
-                        location.getX(),
-                        location.getY(),
-                        location.getZ(),
-                        location.getWorld().getName())));
-        player.sendPlainMessage("§7合計: " + homes.size() + " 個のホーム");
+        userHome.homes().forEach((name, home) -> {
+            Location location = home.location();
+            player.sendPlainMessage("§a" + name + " §7- " +
+                    String.format("%.0f, %.0f, %.0f (%s)",
+                            location.getX(),
+                            location.getY(),
+                            location.getZ(),
+                            location.getWorld().getName()));
+        });
+        player.sendPlainMessage("§7合計: " + userHome.homes().size() + " 個のホーム");
 
         return Command.SINGLE_SUCCESS;
     }
@@ -211,21 +174,18 @@ public class HomeCommand implements com.objectt.commands.Command {
             return 0;
         }
 
+        Player player = (Player) ctx.getSource().getSender();
         String homeName = StringArgumentType.getString(ctx, "name");
-        HomeResult result = getPlayerHome(ctx, homeName);
-        
-        if (!result.exists) {
-            return 0;
-        }
+        UserHome userHome = getPlayerHome(player, homeName);
 
-        Location location = result.homes.get(homeName);
-        result.player.sendPlainMessage("§e=== '" + homeName + "' ホーム情報 ===");
-        result.player.sendPlainMessage("§7ワールド: §f" + location.getWorld().getName());
-        result.player.sendPlainMessage("§7座標: §f" +
+        Location location = userHome.homes().get(homeName).location();
+        player.sendPlainMessage("§e=== '" + homeName + "' ホーム情報 ===");
+        player.sendPlainMessage("§7ワールド: §f" + location.getWorld().getName());
+        player.sendPlainMessage("§7座標: §f" +
                 String.format("X: %.1f, Y: %.1f, Z: %.1f",
                         location.getX(), location.getY(), location.getZ())
         );
-        result.player.sendPlainMessage("§7方角: §f" +
+        player.sendPlainMessage("§7方角: §f" +
                 String.format("Yaw: %.1f, Pitch: %.1f",
                         location.getYaw(), location.getPitch())
         );
@@ -239,14 +199,14 @@ public class HomeCommand implements com.objectt.commands.Command {
         }
         
         UUID playerId = player.getUniqueId();
-        Map<String, Location> homes = playerHomes.get(playerId);
+        UserHome userHome = this.homeRepository.findById(playerId);
         
-        if (homes == null || homes.isEmpty()) {
+        if (userHome.homes().isEmpty()) {
             return builder.buildFuture();
         }
         
         String input = builder.getRemaining().toLowerCase();
-        homes.keySet().stream()
+        userHome.homes().keySet().stream()
                 .filter(homeName -> homeName.toLowerCase().startsWith(input))
                 .forEach(builder::suggest);
         
