@@ -1,10 +1,6 @@
 package com.objectt;
 
-import com.objectt.commands.HomeCommand;
-import com.objectt.commands.MoneyCommand;
-import com.objectt.commands.ScoreboardCommand;
-import com.objectt.commands.SkullCommand;
-import com.objectt.commands.TipCommand;
+import com.objectt.commands.*;
 import com.objectt.economy.VaultManager;
 import com.objectt.enums.Permissions;
 import com.objectt.listener.InventoryClickListener;
@@ -117,6 +113,7 @@ public final class ObjectTSaba extends JavaPlugin {
             commands.register(new MoneyCommand().getCommandNode());
             commands.register(new ScoreboardCommand(scoreBoardManager).getCommandNode());
             commands.register(new TipCommand(tipRepository).getCommandNode());
+            commands.register(new FlyCommand().getCommandNode());
             
             getLogger().info("コマンド登録完了");
         });
