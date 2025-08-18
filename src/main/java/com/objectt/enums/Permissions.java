@@ -17,7 +17,9 @@ public enum Permissions {
 
     MONEY_ADMIN("objectt.money.admin", false),
 
-    SCOREBOARD("objectt.scoreboard", true);
+    SCOREBOARD("objectt.scoreboard", true),
+
+    FLY("objectt.fly", true);
 
     private final String permission;
     private final boolean canUseDefault;
